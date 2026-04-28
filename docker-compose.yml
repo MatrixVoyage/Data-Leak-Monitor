@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend-cloud
+    ports:
+      - "8000:8000"
+    environment:
+      - ADMIN_PASSWORD=admin
+      - JWT_SECRET=change_this_in_production
+      - ENVIRONMENT=production
+      - ALLOWED_ORIGINS=http://localhost:3000
+    volumes:
+      - backend_data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  backend_data:
