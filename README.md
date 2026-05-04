@@ -25,9 +25,74 @@ NetSentinel is an advanced, privacy-first network monitoring system designed to 
 
 NetSentinel utilizes a decoupled, three-tier architecture:
 
+```mermaid
+graph TD
+    subgraph "Local Network"
+        device[IoT / User Devices] -->|Raw Packets| agent[Local Agent Sniffer]
+        agent -->|SQLite Cache| agent
+    end
+    subgraph "Cloud Infrastructure"
+        agent -->|HTTPS Batch POST| api[FastAPI Backend]
+        api <--> rules{Analysis & Rules Engine}
+        api -->|Read/Write| db[(PostgreSQL / SQLite)]
+    end
+    subgraph "User Interface"
+        dashboard[Next.js Dashboard] <-->|REST API / Polling| api
+    end
+```
+
 1. **[Cloud Backend](./backend-cloud):** A high-performance FastAPI server managing data persistence, rules-engine evaluation, and authentication.
 2. **[Local Agent](./backend-local-agent):** A lightweight Python service using **Scapy** for hardware-level packet sniffing and secure, buffered transmissions to the cloud.
 3. **[Frontend Dashboard](./frontend):** A responsive **Next.js 16** application for intuitive data visualization and security oversight.
+
+### 📂 Project Structure
+
+```text
+📦 NetSentinel
+├── 📂 backend-cloud/        # FastAPI Server, Rules Engine, DB Models, Auth
+├── 📂 backend-local-agent/  # Scapy Sniffer, Local SQLite Buffer Queue
+├── 📂 frontend/             # Next.js 16 Dashboard, Tailwind CSS, Recharts
+├── 📄 docker-compose.yml    # Multi-container orchestration config
+├── 📄 NetSentinel_Documentation.md # Deep dive architecture & logic
+└── 📄 README.md             # Project overview and run instructions
+```
+
+## 🗄️ Database Entity-Relationship
+
+The Cloud Backend persists critical metadata to drive the detection engines and frontend interfaces:
+
+```mermaid
+erDiagram
+    USER {
+        int id PK
+        string username
+        string role
+        string hashed_password
+    }
+    TRAFFIC_RECORD {
+        int id PK
+        string source_ip
+        string dest_ip
+        int dest_port
+        string protocol
+        int byte_size
+        string dest_domain
+        string geo_location
+        datetime timestamp
+    }
+    ANOMALY {
+        int id PK
+        string type
+        string description
+        int severity_score
+        string related_ip
+        datetime timestamp
+        boolean resolved
+    }
+    
+    USER ||--o{ ANOMALY : "investigates/resolves"
+    TRAFFIC_RECORD ||--o{ ANOMALY : "triggers"
+```
 
 ## 🛠️ Technology Stack
 
